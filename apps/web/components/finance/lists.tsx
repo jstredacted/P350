@@ -1,4 +1,4 @@
-import { updateBillPaidStatusAction } from "@/app/actions"
+import { deleteBillAction, deleteTransactionAction, updateBillPaidStatusAction } from "@/app/actions"
 import { formatCurrencyPhp } from "@/lib/domain/finance"
 import type { Bill, InvestmentAccount, InvestmentTarget, Transaction } from "@/lib/supabase/database.types"
 
@@ -17,6 +17,17 @@ export function TransactionsList({ transactions }: { transactions: Transaction[]
           </div>
           <div className="coord-list-meta">{tx.date}</div>
           {tx.notes ? <div className="mt-1 text-xs text-[var(--coord-muted)]">{tx.notes}</div> : null}
+          <div className="mt-2 flex gap-2">
+            <a href={`/transactions/${tx.id}/edit`} className="coord-button-muted" style={{ display: "inline-block", width: "auto", padding: "0.3rem 0.6rem", fontSize: "0.7rem" }}>
+              Edit
+            </a>
+            <form action={deleteTransactionAction} style={{ display: "contents" }}>
+              <input type="hidden" name="id" value={tx.id} />
+              <button className="coord-button-muted" style={{ width: "auto", padding: "0.3rem 0.6rem", fontSize: "0.7rem" }}>
+                Delete
+              </button>
+            </form>
+          </div>
         </li>
       ))}
     </ul>
@@ -37,17 +48,29 @@ export function BillsList({ bills }: { bills: Bill[] }) {
             <span className="tabular-nums">{formatCurrencyPhp(bill.amount)}</span>
           </div>
           <div className="coord-list-meta">Due {bill.due_date}</div>
-          <form action={updateBillPaidStatusAction} className="mt-2">
-            <input type="hidden" name="bill_id" value={bill.id} />
-            <input type="hidden" name="paid_date" value={new Date().toISOString().slice(0, 10)} />
-            <button
-              name="paid"
-              value={bill.paid ? "false" : "true"}
-              className={bill.paid ? "coord-button-muted" : "coord-button"}
-            >
-              {bill.paid ? "Mark Unpaid" : "Mark Paid"}
-            </button>
-          </form>
+          <div className="mt-2 flex gap-2">
+            <form action={updateBillPaidStatusAction} style={{ display: "contents" }}>
+              <input type="hidden" name="bill_id" value={bill.id} />
+              <input type="hidden" name="paid_date" value={new Date().toISOString().slice(0, 10)} />
+              <button
+                name="paid"
+                value={bill.paid ? "false" : "true"}
+                className={bill.paid ? "coord-button-muted" : "coord-button"}
+                style={{ width: "auto", padding: "0.3rem 0.7rem", fontSize: "0.7rem", flexShrink: 0 }}
+              >
+                {bill.paid ? "Mark Unpaid" : "Mark Paid"}
+              </button>
+            </form>
+            <a href={`/bills/${bill.id}/edit`} className="coord-button-muted" style={{ display: "inline-block", width: "auto", padding: "0.3rem 0.6rem", fontSize: "0.7rem" }}>
+              Edit
+            </a>
+            <form action={deleteBillAction} style={{ display: "contents" }}>
+              <input type="hidden" name="id" value={bill.id} />
+              <button className="coord-button-muted" style={{ width: "auto", padding: "0.3rem 0.6rem", fontSize: "0.7rem" }}>
+                Delete
+              </button>
+            </form>
+          </div>
         </li>
       ))}
     </ul>

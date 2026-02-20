@@ -448,6 +448,98 @@ export async function createInvestmentContribution(input: {
   }
 }
 
+export async function deleteTransaction(id: string): Promise<void> {
+  if (!hasSupabaseConfig() || !isUuid(id)) return
+  try {
+    await request(`/transactions?id=eq.${id}`, {
+      method: "DELETE",
+      headers: apiHeaders({ Prefer: "return=minimal" }),
+    })
+  } catch {
+    // no-op
+  }
+}
+
+export async function deleteBill(id: string): Promise<void> {
+  if (!hasSupabaseConfig() || !isUuid(id)) return
+  try {
+    await request(`/bills?id=eq.${id}`, {
+      method: "DELETE",
+      headers: apiHeaders({ Prefer: "return=minimal" }),
+    })
+  } catch {
+    // no-op
+  }
+}
+
+export async function getTransaction(id: string): Promise<Transaction | null> {
+  if (!hasSupabaseConfig() || !isUuid(id)) return null
+  try {
+    const rows = await request<Transaction[]>(`/transactions?id=eq.${id}&select=*&limit=1`)
+    return rows[0] ? { ...rows[0], amount: toNumber(rows[0].amount) } : null
+  } catch {
+    return null
+  }
+}
+
+export async function getBill(id: string): Promise<Bill | null> {
+  if (!hasSupabaseConfig() || !isUuid(id)) return null
+  try {
+    const rows = await request<Bill[]>(`/bills?id=eq.${id}&select=*&limit=1`)
+    return rows[0] ? { ...rows[0], amount: toNumber(rows[0].amount) } : null
+  } catch {
+    return null
+  }
+}
+
+export async function updateTransaction(input: {
+  id: string
+  date: string
+  amount: number
+  type: TransactionType
+  notes?: string
+}): Promise<void> {
+  if (!hasSupabaseConfig() || !isUuid(input.id)) return
+  try {
+    await request(`/transactions?id=eq.${input.id}`, {
+      method: "PATCH",
+      headers: apiHeaders({ Prefer: "return=minimal" }),
+      body: JSON.stringify({
+        date: input.date,
+        amount: input.amount,
+        type: input.type,
+        notes: input.notes ?? null,
+      }),
+    })
+  } catch {
+    // no-op
+  }
+}
+
+export async function updateBill(input: {
+  id: string
+  name: string
+  amount: number
+  dueDate: string
+  recurring: boolean
+}): Promise<void> {
+  if (!hasSupabaseConfig() || !isUuid(input.id)) return
+  try {
+    await request(`/bills?id=eq.${input.id}`, {
+      method: "PATCH",
+      headers: apiHeaders({ Prefer: "return=minimal" }),
+      body: JSON.stringify({
+        name: input.name,
+        amount: input.amount,
+        due_date: input.dueDate,
+        recurring: input.recurring,
+      }),
+    })
+  } catch {
+    // no-op
+  }
+}
+
 export async function rolloverMonth(fromMonthId: string, toMonthId: string): Promise<number> {
   if (!hasSupabaseConfig() || !isUuid(fromMonthId) || !isUuid(toMonthId)) return 0
 

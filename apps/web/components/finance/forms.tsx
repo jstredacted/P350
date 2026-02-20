@@ -1,3 +1,7 @@
+"use client"
+
+import { useActionState } from "react"
+
 import {
   createBillAction,
   createInvestmentContributionAction,
@@ -19,8 +23,10 @@ function joinClassNames(...parts: Array<string | undefined>) {
 }
 
 export function TransactionForm({ className }: { className?: string } = {}) {
+  const [state, action, pending] = useActionState(createTransactionAction, null)
+
   return (
-    <form action={createTransactionAction} className={joinClassNames("coordinate-card space-y-3", className)}>
+    <form action={action} className={joinClassNames("coordinate-card space-y-3", className)}>
       <h2 className="coordinate-section-title">Add Transaction</h2>
       <div className="grid grid-cols-2 gap-2">
         <div>
@@ -45,14 +51,19 @@ export function TransactionForm({ className }: { className?: string } = {}) {
         <label className={labelClass}>Notes</label>
         <input className={inputClass} name="notes" type="text" placeholder="Optional" />
       </div>
-      <button className="coord-button">Save Transaction</button>
+      {state?.error ? <p className="coord-error">{state.error}</p> : null}
+      <button className="coord-button" disabled={pending}>
+        {pending ? "Saving…" : "Save Transaction"}
+      </button>
     </form>
   )
 }
 
 export function BillForm({ className }: { className?: string } = {}) {
+  const [state, action, pending] = useActionState(createBillAction, null)
+
   return (
-    <form action={createBillAction} className={joinClassNames("coordinate-card space-y-3", className)}>
+    <form action={action} className={joinClassNames("coordinate-card space-y-3", className)}>
       <h2 className="coordinate-section-title">Add Bill</h2>
       <div>
         <label className={labelClass}>Name</label>
@@ -71,15 +82,20 @@ export function BillForm({ className }: { className?: string } = {}) {
       <label className="flex items-center gap-2 text-xs text-[var(--coord-muted)]">
         <input type="checkbox" name="recurring" className="size-4 accent-black" /> Recurring monthly
       </label>
-      <button className="coord-button">Save Bill</button>
+      {state?.error ? <p className="coord-error">{state.error}</p> : null}
+      <button className="coord-button" disabled={pending}>
+        {pending ? "Saving…" : "Save Bill"}
+      </button>
     </form>
   )
 }
 
 export function InvestmentContributionForm({ className }: { className?: string } = {}) {
+  const [state, action, pending] = useActionState(createInvestmentContributionAction, null)
+
   return (
     <form
-      action={createInvestmentContributionAction}
+      action={action}
       className={joinClassNames("coordinate-card space-y-3", className)}
     >
       <h2 className="coordinate-section-title">Add Contribution</h2>
@@ -108,7 +124,10 @@ export function InvestmentContributionForm({ className }: { className?: string }
           placeholder="account_uuid:1000.00"
         />
       </div>
-      <button className="coord-button">Save Contribution</button>
+      {state?.error ? <p className="coord-error">{state.error}</p> : null}
+      <button className="coord-button" disabled={pending}>
+        {pending ? "Saving…" : "Save Contribution"}
+      </button>
     </form>
   )
 }

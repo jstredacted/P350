@@ -1,20 +1,27 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { redirect } from "next/navigation"
 
 import { splitByTargets } from "@/lib/domain/finance"
 import {
   createBill,
   createInvestmentContribution,
   createTransaction,
+  deleteBill,
+  deleteTransaction,
   ensureCurrentMonth,
+  getBill,
   getOrCreateMonth,
+  getTransaction,
   listInvestmentTargets,
   rolloverMonth,
   runTestScript,
   seedDemoDataForCurrentMonth,
   setSalaryReceived,
+  updateBill,
   updateBillPaidStatus,
+  updateTransaction,
   upsertMonthSettings,
 } from "@/lib/supabase/http"
 import type { TransactionType } from "@/lib/supabase/database.types"
@@ -27,34 +34,48 @@ function parseDate(input: FormDataEntryValue | null) {
   return String(input ?? new Date().toISOString().slice(0, 10))
 }
 
-export async function createTransactionAction(formData: FormData) {
-  const month = await ensureCurrentMonth()
-
-  await createTransaction({
-    monthId: month.id,
-    date: parseDate(formData.get("date")),
-    amount: parseMoney(formData.get("amount")),
-    type: String(formData.get("type")) as TransactionType,
-    notes: String(formData.get("notes") ?? ""),
-  })
-
-  revalidatePath("/")
-  revalidatePath("/transactions")
+export async function createTransactionAction(
+  _prev: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string } | null> {
+  try {
+    const month = await ensureCurrentMonth()
+    const result = await createTransaction({
+      monthId: month.id,
+      date: parseDate(formData.get("date")),
+      amount: parseMoney(formData.get("amount")),
+      type: String(formData.get("type")) as TransactionType,
+      notes: String(formData.get("notes") ?? ""),
+    })
+    if (!result) return { error: "Failed to save transaction. Check your connection." }
+    revalidatePath("/")
+    revalidatePath("/transactions")
+    return null
+  } catch {
+    return { error: "An unexpected error occurred." }
+  }
 }
 
-export async function createBillAction(formData: FormData) {
-  const month = await ensureCurrentMonth()
-
-  await createBill({
-    monthId: month.id,
-    name: String(formData.get("name") ?? ""),
-    amount: parseMoney(formData.get("amount")),
-    dueDate: parseDate(formData.get("due_date")),
-    recurring: String(formData.get("recurring") ?? "off") === "on",
-  })
-
-  revalidatePath("/")
-  revalidatePath("/bills")
+export async function createBillAction(
+  _prev: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string } | null> {
+  try {
+    const month = await ensureCurrentMonth()
+    const result = await createBill({
+      monthId: month.id,
+      name: String(formData.get("name") ?? ""),
+      amount: parseMoney(formData.get("amount")),
+      dueDate: parseDate(formData.get("due_date")),
+      recurring: String(formData.get("recurring") ?? "off") === "on",
+    })
+    if (!result) return { error: "Failed to save bill. Check your connection." }
+    revalidatePath("/")
+    revalidatePath("/bills")
+    return null
+  } catch {
+    return { error: "An unexpected error occurred." }
+  }
 }
 
 export async function updateBillPaidStatusAction(formData: FormData) {
@@ -95,7 +116,10 @@ export async function updateMonthSettingsAction(formData: FormData) {
   revalidatePath("/settings/month")
 }
 
-export async function createInvestmentContributionAction(formData: FormData) {
+export async function createInvestmentContributionAction(
+  _prev: { error?: string } | null,
+  formData: FormData
+): Promise<{ error?: string } | null> {
   const month = await ensureCurrentMonth()
   const totalAmount = parseMoney(formData.get("total_amount"))
   const mode = String(formData.get("mode") ?? "auto")
@@ -127,15 +151,20 @@ export async function createInvestmentContributionAction(formData: FormData) {
       .filter((move) => move.accountId && Number.isFinite(move.amount) && move.amount > 0)
   }
 
-  await createInvestmentContribution({
-    monthId: month.id,
-    totalAmount,
-    date,
-    moves,
-  })
-
-  revalidatePath("/")
-  revalidatePath("/investments")
+  try {
+    const result = await createInvestmentContribution({
+      monthId: month.id,
+      totalAmount,
+      date,
+      moves,
+    })
+    if (!result) return { error: "Failed to save contribution. Check your connection." }
+    revalidatePath("/")
+    revalidatePath("/investments")
+    return null
+  } catch {
+    return { error: "An unexpected error occurred." }
+  }
 }
 
 export async function rolloverMonthAction() {
@@ -159,6 +188,48 @@ export async function seedDemoDataAction() {
   revalidatePath("/bills")
   revalidatePath("/investments")
   revalidatePath("/settings/month")
+}
+
+export async function deleteTransactionAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "")
+  await deleteTransaction(id)
+  revalidatePath("/")
+  revalidatePath("/transactions")
+}
+
+export async function deleteBillAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "")
+  await deleteBill(id)
+  revalidatePath("/")
+  revalidatePath("/bills")
+}
+
+export async function updateTransactionAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "")
+  await updateTransaction({
+    id,
+    date: parseDate(formData.get("date")),
+    amount: parseMoney(formData.get("amount")),
+    type: String(formData.get("type")) as TransactionType,
+    notes: String(formData.get("notes") ?? ""),
+  })
+  revalidatePath("/")
+  revalidatePath("/transactions")
+  redirect("/transactions")
+}
+
+export async function updateBillAction(formData: FormData) {
+  const id = String(formData.get("id") ?? "")
+  await updateBill({
+    id,
+    name: String(formData.get("name") ?? ""),
+    amount: parseMoney(formData.get("amount")),
+    dueDate: parseDate(formData.get("due_date")),
+    recurring: String(formData.get("recurring") ?? "off") === "on",
+  })
+  revalidatePath("/")
+  revalidatePath("/bills")
+  redirect("/bills")
 }
 
 export async function runTestScriptAction(formData: FormData) {

@@ -246,9 +246,18 @@ body {
 .coordinate-bento {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  align-items: start;
+  align-items: stretch;
   gap: 0.7rem;
-  grid-auto-flow: dense;
+  grid-auto-flow: row;
+}
+
+/* wrapper divs (bento-span-N without coordinate-card) pass stretch to their single card child */
+.coordinate-bento > div {
+  display: flex;
+  flex-direction: column;
+}
+.coordinate-bento > div > * {
+  flex: 1;
 }
 
 .bento-span-12 {
@@ -487,6 +496,13 @@ body {
   padding-right: 0.22rem;
 }
 
+.coord-error {
+  margin-top: 0.35rem;
+  font-size: 0.74rem;
+  color: color-mix(in srgb, #b00 60%, var(--coord-ink));
+  font-family: var(--font-mono), "Courier New", monospace;
+}
+
 .bento-block-fill {
   height: 100%;
 }
@@ -556,7 +572,17 @@ body {
   }
 
   .bento-span-4 {
+    grid-column: span 4;
+  }
+}
+
+@media (max-width: 768px) {
+  .bento-span-4 {
     grid-column: span 6;
+  }
+
+  .bento-entry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
